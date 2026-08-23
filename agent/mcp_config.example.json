@@ -1,0 +1,21 @@
+{
+  "_comment": "Agent-side MCP client wiring for both connections. Copy to mcp_config.json and fill in local paths. Secrets come from the environment, never from this file.",
+  "mcpServers": {
+    "funnel-calibrator": {
+      "command": "uv",
+      "args": ["--directory", "/absolute/path/to/funnel-calibrator", "run", "funnel-calibrator"],
+      "env": {
+        "FC_SNAPSHOT_PATH": "data/snapshot.json"
+      }
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp-server"],
+      "env": {
+        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
+        "OBSIDIAN_HOST": "127.0.0.1",
+        "OBSIDIAN_PORT": "27124"
+      }
+    }
+  }
+}

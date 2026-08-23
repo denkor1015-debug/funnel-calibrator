@@ -1,0 +1,28 @@
+# Secrets and local configuration
+.env
+.env.local
+*.key
+*.pem
+
+# Real (non-anonymised) data — never commit
+data/raw/
+data/*.raw.json
+data/*.private.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
