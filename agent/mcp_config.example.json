@@ -1,20 +1,22 @@
 {
-  "_comment": "Agent-side MCP client wiring for both connections. Copy to mcp_config.json and fill in local paths. Secrets come from the environment, never from this file.",
+  "_comment": "Agent-side MCP client wiring for both connections. agent/run_agent.py builds this same shape in code from the environment; this file is the portable form other MCP hosts accept. Secrets come from the environment, never from here.",
+  "_obsidian_note": "The Local REST API plugin ships its own MCP server, so no third-party wrapper is involved. It serves streamable HTTP on 27124 behind a self-signed certificate; use http://127.0.0.1:27123/mcp/ when that certificate is rejected and the plugin's plain-HTTP port is enabled.",
   "mcpServers": {
     "funnel-calibrator": {
+      "type": "stdio",
       "command": "uv",
       "args": ["--directory", "/absolute/path/to/funnel-calibrator", "run", "funnel-calibrator"],
       "env": {
-        "FC_SNAPSHOT_PATH": "data/snapshot.json"
+        "FC_SNAPSHOT_PATH": "data/snapshot.json",
+        "FC_COHORT_MATURITY_DAYS": "21",
+        "FC_MIN_SAMPLE": "30"
       }
     },
     "obsidian": {
-      "command": "npx",
-      "args": ["-y", "obsidian-mcp-server"],
-      "env": {
-        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
-        "OBSIDIAN_HOST": "127.0.0.1",
-        "OBSIDIAN_PORT": "27124"
+      "type": "http",
+      "url": "https://127.0.0.1:27124/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${OBSIDIAN_API_KEY}"
       }
     }
   }
