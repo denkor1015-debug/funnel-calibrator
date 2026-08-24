@@ -4,6 +4,19 @@ Every tool documents: name, purpose, model-facing description, input schema, out
 
 Descriptions below are the **exact strings** the server exposes. Examples are **recorded outputs** from the committed snapshot (4 132 orders, 1 June – 24 August 2026), not illustrations; running the same call reproduces them.
 
+Input **and** output schemas are published by the server itself, not only
+described here: every tool's return type is declared in
+[`src/funnel_calibrator/contracts.py`](../src/funnel_calibrator/contracts.py),
+so MCP advertises a typed output schema and returns structured content beside
+the JSON. The tables below mirror those declarations, and
+`tests/test_contracts.py` fails if the two drift apart.
+
+Every key in every response is always present; optionality is carried by
+`null`. That is a contract decision — a null buyout rate means "measured,
+sample too thin to report", which is a finding rather than a gap — and also a
+constraint: the SDK marks every property of an output schema as required, so
+an optional key would produce a schema the server's own responses fail.
+
 To check this document against a running server:
 
 ```bash

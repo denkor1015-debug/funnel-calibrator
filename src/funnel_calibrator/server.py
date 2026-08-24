@@ -14,7 +14,7 @@ connection and writes nothing.
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -25,6 +25,16 @@ from .calibration import (
     EconomicsError,
     breakeven_buyout,
     calibrate,
+)
+from .contracts import (
+    ActionRecommendation,
+    AuditEvidence,
+    AuditVerdict,
+    BreakevenCondition,
+    CalibrationBounds,
+    FunnelMeasurement,
+    SkuCoverage,
+    SkuRow,
 )
 from .policy import COMPATIBLE, recommend
 from .snapshot import (
@@ -119,7 +129,7 @@ def _measure(
     window_from: str | None = None,
     window_to: str | None = None,
     maturity_days: int | None = None,
-) -> dict[str, Any]:
+) -> FunnelMeasurement:
     """The measurement every other tool builds on."""
     if maturity_days is not None and not 0 <= maturity_days <= 90:
         raise ToolError(f"`maturity_days` must be between 0 and 90; got {maturity_days}.")
@@ -203,7 +213,7 @@ def measure_sku_funnel(
             le=90,
         ),
     ] = None,
-) -> dict[str, Any]:
+) -> FunnelMeasurement:
     snapshot = _snapshot()
     code = _require_sku(snapshot, sku)
     return _measure(snapshot, code, window_from, window_to, maturity_days)
@@ -251,7 +261,7 @@ def recalibrate_cpl_bounds(
     window_to: Annotated[
         str | None, Field(description="ISO date, used only when measuring on demand")
     ] = None,
-) -> dict[str, Any]:
+) -> CalibrationBounds:
     snapshot = _snapshot()
     code = _require_sku(snapshot, sku)
 
@@ -329,7 +339,7 @@ def recommend_next_action(
     ] = None,
     window_from: Annotated[str | None, Field(description="ISO date")] = None,
     window_to: Annotated[str | None, Field(description="ISO date")] = None,
-) -> dict[str, Any]:
+) -> ActionRecommendation:
     if current_cpl < 0:
         raise ToolError(f"`current_cpl` cannot be negative; got {current_cpl}.")
 
@@ -356,7 +366,7 @@ def recommend_next_action(
         creative_ctr_trend=creative_ctr_trend,
     )
 
-    payload = {
+    payload: ActionRecommendation = {
         "sku": code,
         "action": suggestion.action,
         "diagnosis": suggestion.diagnosis,
@@ -365,6 +375,9 @@ def recommend_next_action(
         "confidence": suggestion.confidence,
         "priority": suggestion.priority,
         "measurement": measurement,
+        # Present on every response, null unless the remedy is a price
+        # change — the published schema requires the key either way.
+        "breakeven_condition": None,
     }
 
     # Where the remedy is a price change, say what would have to become true
@@ -382,7 +395,7 @@ def recommend_next_action(
             upsell_uah=result.inputs_used["upsell_uah"],
             rate_usd_uah=result.usd_uah,
         )
-        payload["breakeven_condition"] = {
+        condition: BreakevenCondition = {
             "required_buyout_rate": required,
             "observed_buyout_rate": result.observed.buyout_rate,
             "points_needed": (
@@ -397,6 +410,7 @@ def recommend_next_action(
                 "dataset can say."
             ),
         }
+        payload["breakeven_condition"] = condition
     return payload
 
 
@@ -441,7 +455,7 @@ def audit_ad_verdict(
     cpl_trend_days: Annotated[
         int | None, Field(description="Days the cost per lead has held", ge=0, le=365)
     ] = None,
-) -> dict[str, Any]:
+) -> AuditVerdict:
     if proposed_action not in ACTIONS:
         raise ToolError(
             f"Unrecognised `proposed_action` '{proposed_action}'. "
@@ -457,7 +471,7 @@ def audit_ad_verdict(
         cpl_trend_days=cpl_trend_days,
     )
 
-    evidence = dict(own["evidence"])
+    evidence: AuditEvidence = dict(own["evidence"])  # type: ignore[assignment]
     evidence["proposed_action"] = proposed_action
     evidence["source"] = source
 
@@ -510,13 +524,13 @@ def list_covered_skus(
     min_orders: Annotated[
         int, Field(description="Only list products with at least this many orders", ge=0)
     ] = 1,
-) -> dict[str, Any]:
+) -> SkuCoverage:
     snapshot = _snapshot()
     counts: dict[str, int] = {}
     for order in snapshot.orders:
         counts[order.sku] = counts.get(order.sku, 0) + 1
 
-    rows = [
+    rows: list[SkuRow] = [
         {
             "sku": sku,
             "orders": total,

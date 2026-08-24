@@ -69,6 +69,9 @@ STATUS_NAMES = {
 }
 
 ApprovalOutcome = Literal["approved", "rejected", "pending"]
+# Published in every tool response, so it is a contract value, not a loose
+# string — `contracts.py` builds the output schemas on it.
+Reliability = Literal["high", "low", "insufficient"]
 DeliveryOutcome = Literal["bought_out", "refused", "in_transit", "not_shipped"]
 
 
@@ -323,7 +326,7 @@ def select_cohort(
     )
 
 
-def reliability_of(resolved: int, threshold: int | None = None) -> str:
+def reliability_of(resolved: int, threshold: int | None = None) -> Reliability:
     """`high` | `low` | `insufficient`, from the resolved sample size.
 
     Below the threshold the server declines to report a rate at all. Replacing

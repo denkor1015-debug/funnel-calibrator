@@ -156,4 +156,25 @@ These are returned distinctly: empty results carry `reliability: "insufficient"`
 
 **Thin samples are the normal case, not the exception.** Of the 51 products with orders in the window, **21** clear the 30-resolved-order threshold and only **7** reach `high` reliability; a further filter applies, because only **15** of those also have price and cost on file and can therefore be recalibrated at all. The gating is not a defensive corner case — it fires on most of the portfolio. That is a real limit on what the server can offer: for roughly two thirds of products its honest answer is that it cannot say, and the portfolio constant remains the only available number. Widening the window trades that against staleness rather than removing it.
 
+**A schema can exist and still say nothing.** Every tool was typed on the way
+in — constrained integers, ISO dates, enumerated actions — and the input
+schemas MCP published were genuinely useful. The output side looked done for
+the same reason and was not: annotating a tool `-> dict[str, Any]` publishes
+`{"additionalProperties": true}`, a schema that satisfies the letter of "expose
+an output schema" while telling a caller nothing. The fix was to declare each
+return as a `TypedDict` (`contracts.py`), which took the published schema for
+`measure_sku_funnel` from zero described fields to twenty.
+
+Doing it surfaced a second thing worth recording, because it fails in a
+misleading way. The SDK marks **every** property of an output schema as
+required, so a `NotRequired` key produces a schema the server's own successful
+responses fail to validate against — and the tool call comes back as an error
+that reads like a data problem. Two payload fields were genuinely conditional:
+the break-even condition, which only a price remedy carries, and three
+evidence fields the diagnosis tree never computes when it returns early. Both
+now emit the key with `null`. That is the better contract regardless of the
+constraint: a caller can rely on the key set, and `null` here already carries
+meaning elsewhere — a null buyout rate means "measured, sample too thin to
+report", which is a finding rather than an absence.
+
 **Rate limits shape the export.** The CRM answers HTTP 429 under sustained polling, which the first export run hit after roughly 80 requests. The exporter now throttles, backs off exponentially, and checkpoints its offer map after every product so an interrupted run resumes rather than restarts. Worth stating because the runtime path has no such fragility at all — the server reads a local file — but the step that *produces* that file does.

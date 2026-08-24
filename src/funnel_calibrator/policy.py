@@ -172,6 +172,13 @@ def _diagnose(
         "margin_at_current_cpl": _margin_at(calibration, current_cpl),
         "reliability": reliability,
         "economics_reliable": calibration.economics_reliable,
+        # Seeded null and overwritten below once the tree gets that far. The
+        # two early returns settle without ever testing for a collapse or a
+        # spike, and the published output schema requires the keys to be there
+        # either way — a caller can rely on the key set, not just the values.
+        "approval_collapsed": None,
+        "buyout_collapsed": None,
+        "spike_over_goal_pct": None,
     }
 
     # 1 · No measurement worth the name. Decline rather than guess.

@@ -19,6 +19,8 @@ uv run python scripts/export_snapshot.py --economics-only
 uv run python agent/run_agent.py --dry-run
 ```
 
+`pytest` should report **56 passed**.
+
 ---
 
 ## 1 · Independent startup and architecture (≈2 min)
@@ -61,6 +63,9 @@ uv run python agent/run_agent.py --dry-run
 ## 3 · Custom end-to-end workflow (≈3–4 min)
 
 - [ ] Four substantive tools plus one helper, visible in the inspector or in the agent's calls.
+- [ ] **Show an output schema, not just an input one.** In the inspector, open `measure_sku_funnel` → Output Schema: twenty typed fields, `reliability` an enum of three values, `window` a `$ref`. Say why it is there: a caller can validate a response instead of trusting it, and the tool returns structured content beside the JSON. The declarations live in `src/funnel_calibrator/contracts.py`.
+
+  If asked why nothing is optional: the SDK marks every property required, so a `NotRequired` key would publish a schema the server's own responses fail. Conditional fields emit `null` instead — `breakeven_condition` is null unless the remedy is a price change. `tests/test_contracts.py::test_every_field_is_required` pins it.
 - [ ] Let the flow complete: read journal → measure → recalibrate → audit → write verdict back.
 - [ ] **All three watchdog proposals come back `contradicted`, with three different counter-recommendations.** That is the point: "the target was missed" is not one problem.
 

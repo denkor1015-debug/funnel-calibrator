@@ -173,6 +173,7 @@ uv run python scripts/export_snapshot.py --from 2026-06-01 --to 2026-08-24
 ```
 src/funnel_calibrator/   MCP server
   server.py              tool definitions and MCP wiring
+  contracts.py           typed output contracts — the published output schemas
   snapshot.py            dataset loading, status taxonomy, cohort censoring
   calibration.py         unit economics — mirrors the business's own econ.py
   policy.py              diagnosis tree: evidence ──► diagnosis ──► action
@@ -181,7 +182,7 @@ data/                    snapshot dataset + anonymisation policy
 demo-vault/              Obsidian vault for the demonstration (no personal notes)
 docs/                    tool contracts, design rationale, defence checklist
 agent/                   end-to-end agent flow across both connections
-tests/                   37 tests: calibration, censoring, sample gating, policy
+tests/                   56 tests: calibration, censoring, sample gating, policy, contracts
 ```
 
 ## Build plan
