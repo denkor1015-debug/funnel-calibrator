@@ -14,12 +14,21 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+# Kept so `pip install .[agent]` works for anyone not using uv.
 [project.optional-dependencies]
+agent = [
+    "claude-agent-sdk>=0.1.0",
+]
+
+# uv installs this group by default, so a plain `uv sync` on a fresh clone
+# leaves every command in the README runnable — tests, linter and agent flow
+# included. As extras these were skipped by default, and `uv run pytest`
+# failed on a clean checkout while working fine in an environment that had
+# been built earlier with the extras named.
+[dependency-groups]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
-]
-agent = [
     "claude-agent-sdk>=0.1.0",
 ]
 
