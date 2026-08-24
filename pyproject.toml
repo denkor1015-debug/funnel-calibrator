@@ -19,6 +19,9 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
+agent = [
+    "claude-agent-sdk>=0.1.0",
+]
 
 [project.scripts]
 funnel-calibrator = "funnel_calibrator.server:main"
@@ -33,6 +36,16 @@ packages = ["src/funnel_calibrator"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
+# Pinned rather than inherited, so a ruff upgrade cannot change what "clean"
+# means mid-project. DTZ (timezone-aware datetimes) is deliberately out: the
+# business runs in one timezone and its order dates are naive by definition.
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET"]
+ignore = [
+    "E501",   # line length is the formatter's job
+    "RET504", # naming a result before returning it is often the clearer form
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
