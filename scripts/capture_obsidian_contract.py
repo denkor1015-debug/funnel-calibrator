@@ -20,10 +20,10 @@ import os
 import sys
 from pathlib import Path
 
-import httpx
+import httpx2
 from dotenv import load_dotenv
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 REPO = Path(__file__).resolve().parent.parent
 load_dotenv(REPO / ".env")
@@ -43,15 +43,19 @@ async def main(wanted: set[str]) -> int:
     scheme = "https" if port == "27124" else "http"
     url = f"{scheme}://{host}:{port}/mcp/"
 
-    # The plugin generates a self-signed certificate for 127.0.0.1, so
-    # verification is switched off for this loopback connection only.
+    # On 27124 the plugin presents a certificate it signed itself, so this
+    # probe skips verification — for a loopback address, and only here. On
+    # 27123 there is no TLS at all and `verify` makes no difference.
+    client = httpx2.AsyncClient(
+        headers={"Authorization": f"Bearer {token}"},
+        verify=scheme != "https",
+        timeout=30,
+    )
+
     async with (
-        streamablehttp_client(
-            url,
-            headers={"Authorization": f"Bearer {token}"},
-            httpx_client_factory=lambda **kw: httpx.AsyncClient(**{**kw, "verify": False}),
-        ) as (read, write, _),
-        ClientSession(read, write) as session,
+        client,
+        streamable_http_client(url, http_client=client) as streams,
+        ClientSession(streams[0], streams[1]) as session,
     ):
         init = await session.initialize()
         print(f"# {init.server_info.name} {init.server_info.version}")

@@ -6,7 +6,7 @@ Individual defence, 10–15 minutes. Every command below is real and runs from t
 
 - [ ] `git status` clean; `data/snapshot.json` and `data/economics.json` present
 - [ ] `.env` configured — **and every editor showing it closed**. Nothing on screen may display the Obsidian key
-- [ ] Obsidian running, Local REST API enabled, **`demo-vault` open — not a personal vault**
+- [ ] Obsidian running, Local REST API enabled with its **plain-HTTP listener on 27123** on, **`demo-vault` open — not a personal vault**
 - [ ] `demo-vault/Decisions/` emptied, so the note the agent writes is visibly new
 - [ ] Terminal font large enough for tool calls and JSON to be legible on the recording
 - [ ] Second terminal ready for the failure demonstration
@@ -62,11 +62,17 @@ uv run python agent/run_agent.py --dry-run
 
 - [ ] Four substantive tools plus one helper, visible in the inspector or in the agent's calls.
 - [ ] Let the flow complete: read journal → measure → recalibrate → audit → write verdict back.
-- [ ] **The verdict that flips.** Article `21-154`:
-  - the watchdog proposed `scale` because CPL $1.63 is inside the assumed goal of **$1.63**
-  - measured on 95 resolved orders, the product approves at **59.0%** (not 65%) and buys out at **45.3%** (not 52.5%)
-  - its true break-even is **$1.61** — *below* the target being optimised toward
-  - `audit_ad_verdict` returns **contradicted**, counter-recommendation **`stop`**
+- [ ] **All three watchdog proposals come back `contradicted`, with three different counter-recommendations.** That is the point: "the target was missed" is not one problem.
+
+  | Product | Proposed | Verdict | Counter | Assumed Goal | Observed Stop | Sample | Reliability |
+  |---|---|---|---|---:|---:|---:|---|
+  | 21-154 | `scale` | contradicted | `stop` | $1.63 | **$1.61** | 95 | high |
+  | 21-197 | `scale` | contradicted | `new_creative` | $2.16 | $2.17 | 31 | low |
+  | 21-253 | `stop` | contradicted | `pause_retry` | $3.08 | $4.89 | 206 | high |
+
+- [ ] **21-154 is the sharp one** — the failure the server exists to catch. Approval 59.0% (not 65%), buyout 45.3% (not 52.5%), so break-even falls to **$1.61** while $1.63 is being paid. `target_above_breakeven: true`, margin **−$0.02 per lead**. The note says it was scaled twice this month on cost per lead alone.
+- [ ] **21-197 shows the tool declining to overreach.** Approval collapsed to 31.6%, so cheap leads are a traffic-quality artefact, not headroom — but the resolved sample is 31 against a threshold of 30, so reliability is `low` and the whole product is reported as provisional.
+- [ ] **21-253 shows the opposite error.** It is the only product whose economics *improved* (+10.9%). The $6.00 CPL is genuinely unaffordable, but with a competitor active for five days the diagnosis is a contested auction — `pause_retry`, not `stop`. Stopping would retire a product that works.
 - [ ] Explain `measure_sku_funnel` in depth, and why censoring lives in the server:
 
   > A parcel posted nine days ago is neither a buyout nor a return. Counting it as a non-buyout biases the rate downward, and worst exactly where the scale-or-stop decision is live — a newly launched product whose whole sample is recent. In the server, the exclusion applies on every call however the agent phrases the request. In a prompt, it holds until the context is long enough for the model to forget it.

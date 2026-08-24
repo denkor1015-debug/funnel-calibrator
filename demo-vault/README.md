@@ -19,10 +19,36 @@ to keep a demonstration vault free of anything sensitive.
 3. In the plugin's settings, copy the generated API key.
 4. Put it in the repository's `.env` as `OBSIDIAN_API_KEY=…`. The key is a
    secret: `.env` is git-ignored and the value never appears in source.
+5. In the same settings pane, enable **Enable Non-encrypted (HTTP) Server**,
+   and set `OBSIDIAN_PORT=27123` in `.env`. See below for why this is needed
+   rather than optional.
 
-The plugin serves HTTPS on `127.0.0.1:27124` with a self-signed certificate, and
-plain HTTP on `27123`. `agent/run_agent.py` uses 27124 by default and falls back
-to 27123 if the certificate is rejected — set `OBSIDIAN_PORT=27123` to force it.
+To write the key without it appearing on screen or in shell history, copy it in
+Obsidian and then:
+
+```bash
+grep -v '^OBSIDIAN_API_KEY=' .env > .env.new && printf 'OBSIDIAN_API_KEY=%s\n' "$(pbpaste)" >> .env.new && mv .env.new .env && chmod 600 .env
+```
+
+## Why plain HTTP on 27123
+
+The plugin's HTTPS listener on 27124 presents a certificate it generated
+itself. Node — which runs the Claude Code CLI hosting the MCP client — rejects
+it, so the connection fails. The symptoms are confusing: a request with
+verification disabled succeeds while the agent's own connection does not.
+
+Two ways out, and `agent/run_agent.py` supports both:
+
+- **`OBSIDIAN_PORT=27123`** with the plugin's plain-HTTP listener enabled. The
+  traffic never leaves the loopback interface and the API key is still
+  required, so this is a reasonable trade on a local machine. This is what the
+  committed configuration uses.
+- **`OBSIDIAN_CA_CERT=/path/to/cert.pem`**, pointing at the certificate the
+  plugin offers to export. This is passed to the CLI as `NODE_EXTRA_CA_CERTS`,
+  which makes Node trust that one certificate and nothing else.
+
+Disabling Node's certificate verification wholesale is deliberately not
+offered: it would apply to every connection the CLI makes, not just this one.
 
 ## Resetting between runs
 

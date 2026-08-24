@@ -33,7 +33,6 @@ from claude_agent_sdk import (
     ResultMessage,
     SystemMessage,
     TextBlock,
-    ToolResultBlock,
     ToolUseBlock,
     query,
 )
@@ -108,6 +107,37 @@ def preflight_obsidian(config: dict[str, object]) -> None:
             "with the Local REST API plugin enabled, or set OBSIDIAN_PORT="
             "27123 to use the plugin's plain-HTTP port."
         ) from exc
+
+
+def cli_env() -> dict[str, str]:
+    """Environment for the Claude Code CLI process that hosts the MCP client.
+
+    The plugin's HTTPS listener uses a certificate it generates itself, which
+    Node rejects — the connection fails while a curl with verification off
+    succeeds, which is a confusing pair of symptoms. Two ways out, and this
+    supports both:
+
+      · point OBSIDIAN_CA_CERT at the certificate the plugin offers to export,
+        which makes Node trust that one certificate and nothing else; or
+      · set OBSIDIAN_PORT=27123 and enable the plugin's plain-HTTP listener.
+        The traffic never leaves the loopback interface and the key is still
+        required, so this is a reasonable trade on a local machine.
+
+    Disabling Node's certificate verification wholesale is deliberately not
+    offered: it would apply to every connection the CLI makes, not just this one.
+    """
+    env = {"OBSIDIAN_VAULT_PATH": str(VAULT)}
+    ca_cert = os.environ.get("OBSIDIAN_CA_CERT", "").strip()
+    if ca_cert:
+        path = Path(ca_cert).expanduser()
+        if not path.exists():
+            raise ConnectionFailure(
+                f"OBSIDIAN_CA_CERT points at {path}, which does not exist. "
+                "Export the certificate from the plugin's settings, or unset "
+                "the variable and use OBSIDIAN_PORT=27123 instead."
+            )
+        env["NODE_EXTRA_CA_CERTS"] = str(path)
+    return env
 
 
 def calibrator_config() -> dict[str, object]:
@@ -228,52 +258,37 @@ async def run(dry_run: bool) -> int:
         cwd=str(REPO),
         max_turns=40,
         setting_sources=None,
-        env={"OBSIDIAN_VAULT_PATH": str(VAULT)},
+        env=cli_env(),
     )
 
     prompt = "List the tools available from both MCP servers, then stop." if dry_run else PROMPT
 
     checked = False
     failure: ConnectionFailure | None = None
-    async for message in query(prompt=prompt, options=options):
-        if isinstance(message, SystemMessage) and message.subtype == "init":
-            checked = True
-            try:
-                check_connections(render_status(message.data))
-            except ConnectionFailure as exc:
-                # Recorded and re-raised after the loop. Raising here would
-                # tear down the generator mid-step and bury the real cause
-                # under an unrelated cleanup error.
-                failure = exc
-                break
-            print("\n─── agent flow ───")
-            continue
+    exit_code = 0
 
-        if isinstance(message, AssistantMessage):
-            for block in message.content:
-                if isinstance(block, ToolUseBlock):
-                    args = {
-                        k: v
-                        for k, v in (block.input or {}).items()
-                        if k
-                        in ("sku", "proposed_action", "current_cpl", "filename", "path", "source")
-                    }
-                    print(f"  → {block.name}({args})")
-                elif isinstance(block, TextBlock) and block.text.strip():
-                    print(f"\n{block.text.strip()}\n")
+    try:
+        async for message in query(prompt=prompt, options=options):
+            if isinstance(message, SystemMessage) and message.subtype == "init":
+                checked = True
+                try:
+                    check_connections(render_status(message.data))
+                except ConnectionFailure as exc:
+                    # Recorded and raised after the stream, not here: raising
+                    # mid-iteration tears the generator down while it is still
+                    # running, and that cleanup error would bury the real cause.
+                    failure = exc
+                    break
+                print("\n─── agent flow ───")
+                continue
 
-        elif isinstance(message, ResultMessage):
-            print("─── done ───")
-            if message.is_error:
-                print("Run ended in error.", file=sys.stderr)
-                return 1
-            note = VAULT / "Decisions" / f"{date.today().isoformat()}.md"
-            print(f"Vault note: {note} — {'written' if note.exists() else 'NOT written'}")
-            if message.total_cost_usd:
-                print(f"Cost: ${message.total_cost_usd:.4f}")
-
-        elif isinstance(message, ToolResultBlock):  # pragma: no cover
-            pass
+            exit_code = handle(message) or exit_code
+    except RuntimeError as exc:
+        # Abandoning the SDK's stream makes it complain while tearing down its
+        # own task group. When we already know why we stopped, that noise must
+        # not replace the diagnosis.
+        if failure is None or "aclose" not in str(exc):
+            raise
 
     if failure is not None:
         raise failure
@@ -283,7 +298,38 @@ async def run(dry_run: bool) -> int:
             "was established. Check that the Claude Code CLI is installed and "
             "authenticated."
         )
-    return 0
+    return exit_code
+
+
+def handle(message: object) -> int | None:
+    """Print one streamed message. Returns a non-zero code only on failure.
+
+    Tool calls are printed as they happen, with the arguments that carry
+    meaning — the defence has to show which product each call was made for.
+    """
+    if isinstance(message, AssistantMessage):
+        for block in message.content:
+            if isinstance(block, ToolUseBlock):
+                args = {
+                    k: v
+                    for k, v in (block.input or {}).items()
+                    if k in ("sku", "proposed_action", "current_cpl", "filename", "path", "source")
+                }
+                print(f"  → {block.name}({args})")
+            elif isinstance(block, TextBlock) and block.text.strip():
+                print(f"\n{block.text.strip()}\n")
+
+    elif isinstance(message, ResultMessage):
+        print("─── done ───")
+        if message.is_error:
+            print("Run ended in error.", file=sys.stderr)
+            return 1
+        note = VAULT / "Decisions" / f"{date.today().isoformat()}.md"
+        print(f"Vault note: {note} — {'written' if note.exists() else 'NOT written'}")
+        if message.total_cost_usd:
+            print(f"Cost: ${message.total_cost_usd:.4f}")
+
+    return None
 
 
 def main() -> None:

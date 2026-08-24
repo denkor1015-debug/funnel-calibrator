@@ -344,13 +344,30 @@ uv run python scripts/capture_obsidian_contract.py vault_read
 
 ### `vault_read` — documented in full
 
+Captured from the running plugin (`obsidian-local-rest-api` 1.0.0), not transcribed.
+
 **Purpose in this project.** It is step one, and the reason the vault is an *input* rather than a log. The agent reads `Objective.md`, and that note determines which products are measured and which proposals are audited. Change the table in the note and the whole run changes — no product code is hard-coded anywhere in `agent/run_agent.py`.
 
-**Model-facing description.** Reads the content of a note at a given vault-relative path and returns it as text. Run the capture script above against the running plugin for the verbatim string.
+**Model-facing description** (exact string):
 
-**Arguments and constraints.** A vault-relative file path, e.g. `Objective.md`. The path resolves inside the configured vault only — the plugin will not read outside it, which is what makes a dedicated demonstration vault a real boundary rather than a convention.
+> Read a vault file's content and metadata. Returns a JSON object with: content (full markdown text), path, tags (array of tag strings), frontmatter (parsed YAML front-matter as an object), stat ({ctime, mtime, size}), links (array of vault-relative paths this file links to), backlinks (array of vault-relative paths of files that link here), and unresolvedLinks (array of link text in this file that does not resolve to an existing vault file). Throws if the file does not exist.
+>
+> When targetType and target are both provided, returns only the matched section as a plain string (markdown) or JSON value (frontmatter) instead of the full object. To save context, call vault_get_document_map first to identify headings, block IDs, or frontmatter keys, and prefer targeted reads over full reads for anything but short files.
 
-**Returned content.** The note's text. For `Objective.md` that is the objective, the three products with their current CPL and proposed action, the competitor note on 21-253, and the previous session's conclusions.
+**Input**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `path` | string | yes | File path relative to the vault root, e.g. `Objective.md` |
+| `targetType` | string | no | Enum: `heading` \| `block` \| `frontmatter` |
+| `target` | string \| string[] | no | For a heading, an **array** naming the path from top level down (a bare string is rejected); for a block, the bare id without `^`; for frontmatter, the key |
+| `scope` | string | no | Enum: `content` \| `marker` \| `markerAndContent`; default `content` |
+
+`additionalProperties: false` — the schema rejects anything else outright.
+
+**Returned content.** With `path` alone, a JSON object: `content`, `path`, `tags`, `frontmatter`, `stat`, `links`, `backlinks`, `unresolvedLinks`. With `targetType` + `target`, only the matched section. This project uses the plain form — `Objective.md` is short, and the whole note is what drives the run.
+
+**Constraint worth noting.** Paths resolve inside the configured vault only; the plugin will not read outside it. That is what makes a dedicated demonstration vault a real boundary rather than a convention.
 
 **Error conditions**
 

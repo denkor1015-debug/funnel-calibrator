@@ -26,3 +26,10 @@ build/
 .idea/
 .vscode/
 *.swp
+
+# Obsidian's own vault state. Never commit: the Local REST API plugin stores
+# its API key and generated certificate in .obsidian/plugins/*/data.json, and
+# workspace.json is local UI state. The instructor installs the plugin from
+# the community catalogue — see demo-vault/README.md.
+demo-vault/.obsidian/
+.obsidian/

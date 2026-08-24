@@ -139,8 +139,9 @@ cp .env.example .env
 The agent needs the Obsidian side as well. One-time setup, in full: [`demo-vault/README.md`](demo-vault/README.md).
 
 1. Open `demo-vault/` in Obsidian as a vault — **not a personal vault**.
-2. Install and enable the community plugin **Local REST API** ([coddingtonbear/obsidian-local-rest-api](https://github.com/coddingtonbear/obsidian-local-rest-api)).
+2. Install and enable the community plugin **Local REST API with MCP** by Adam Coddington ([coddingtonbear/obsidian-local-rest-api](https://github.com/coddingtonbear/obsidian-local-rest-api)). Several similarly named plugins mention MCP; this is the approved one.
 3. Copy its generated API key into `.env` as `OBSIDIAN_API_KEY`.
+4. Enable **Enable Non-encrypted (HTTP) Server** in the same pane and set `OBSIDIAN_PORT=27123`. The plugin's HTTPS certificate is self-signed and Node rejects it; `demo-vault/README.md` explains the alternative if you would rather keep TLS.
 
 Then:
 

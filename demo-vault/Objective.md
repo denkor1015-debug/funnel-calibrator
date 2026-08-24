@@ -13,7 +13,7 @@ actually did.
 
 | Product | Current CPL (USD) | Watchdog proposal | Stated reason |
 |---|---:|---|---|
-| 21-154 | 1.63 | `scale` | "CPL is under the $2.55 goal — room to buy more." |
+| 21-154 | 1.63 | `scale` | "CPL is at the $1.63 goal — room to buy more." |
 | 21-197 | 1.20 | `scale` | "Cheapest leads in the account." |
 | 21-253 | 6.00 | `stop` | "CPL well over goal for five days." |
 
