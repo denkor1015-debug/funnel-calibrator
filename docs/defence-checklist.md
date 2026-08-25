@@ -21,7 +21,7 @@ uv run python scripts/export_snapshot.py --economics-only
 uv run python agent/run_agent.py --dry-run
 ```
 
-`pytest` should report **56 passed**.
+`pytest` should report **65 passed**.
 
 ---
 

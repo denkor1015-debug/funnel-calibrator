@@ -177,12 +177,14 @@ src/funnel_calibrator/   MCP server
   snapshot.py            dataset loading, status taxonomy, cohort censoring
   calibration.py         unit economics — mirrors the business's own econ.py
   policy.py              diagnosis tree: evidence ──► diagnosis ──► action
-scripts/                 snapshot exporter (CRM ──► anonymised local dataset)
+scripts/                 snapshot exporter, Obsidian contract capture,
+                         mcp_call.py — call any tool over real MCP from a shell
 data/                    snapshot dataset + anonymisation policy
 demo-vault/              Obsidian vault for the demonstration (no personal notes)
 docs/                    tool contracts, design rationale, defence checklist
 agent/                   end-to-end agent flow across both connections
-tests/                   56 tests: calibration, censoring, sample gating, policy, contracts
+tests/                   65 tests: calibration, censoring, sample gating, policy,
+                         contracts, and the tools exercised over the wire
 ```
 
 ## Build plan
