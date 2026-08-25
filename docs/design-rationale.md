@@ -97,6 +97,60 @@ The split follows the seam between fact, arithmetic, judgement, and validation. 
 
 Two products can present the identical symptom — a missed target — and require opposite remedies. Recommending a price cut for a targeting problem makes the business worse. This table is the tool's reason for existing.
 
+### Why not a single tool, and why no enforced call order
+
+Asked at the defence: could the server not require the tools to be called in
+sequence — tool two refusing to run until tool one has, tool four until one and
+two have? And if the flow is always the same, why is it four tools rather than
+one packaged process?
+
+**The ordering guarantee already holds, by construction rather than by
+protocol.** `audit_ad_verdict` calls `recommend_next_action`, which calls the
+measurement and the calibration. `recalibrate_cpl_bounds` measures the product
+itself when observed rates are not supplied. There is no path through the code
+that yields a verdict without a measurement behind it. That is a stronger
+guarantee than call ordering: an ordering rule can be violated by a confused
+caller, an internal function call cannot.
+
+Enforcing order at the protocol level would mean the server remembering,
+between calls, that an earlier tool had run — a handle issued by one tool and
+demanded by the next. That was rejected deliberately:
+
+- **It would introduce per-client state.** There is none today: every tool is a
+  pure function of the snapshot and its arguments. The only cache is an
+  `lru_cache` on *reading the snapshot file*, which is read-only data, not
+  conversation state. Two callers cannot interfere with each other because
+  there is nothing to interfere with.
+- **It would cost idempotence.** Any tool can be called alone, repeatedly, in
+  any order, and returns the same answer. That is what makes the demonstration
+  reproducible and lets the tests call tools in isolation.
+- **It would add a failure mode and buy nothing.** "Called in the wrong order"
+  becomes a class of error that does not currently exist, while correctness was
+  never at risk.
+- **It would block entry at any level.** The daily watchdog needs only the
+  audit; a dashboard needs only the measurement; a scheduled routine needs only
+  the recalibration. A mandatory chain makes the cheap question expensive.
+
+The four calls visible in the agent transcript are the model showing its work,
+not a technical requirement. It could call `audit_ad_verdict` alone and reach
+the same verdict.
+
+**Why four and not one** is answered by §4 above — the split follows the seam
+between fact, arithmetic, judgement and validation — but three consequences
+are worth stating separately, because they are what a merged tool would cost:
+
+| | A merged tool would lose |
+|---|---|
+| **Partial trust** | The measurement is fact and can be accepted; the recommendation encodes business judgement and is *designed* to be overridden by a human who knows something the data does not. Merged, a caller cannot take one without the other. |
+| **Diagnosability** | A bad measurement is fixed in the data, a bad recommendation in the rules. One tool returns one error and hides which layer was wrong. |
+| **Independent change** | The diagnosis tree is rewritten whenever the business learns something; the unit-economics formula almost never changes. Coupled, every policy tweak re-validates the arithmetic. |
+| **Visible evidence** | Four calls show, in the transcript, what the model saw before concluding. One call hands it a verdict, and nothing distinguishes reasoning from relaying — which matters for a system advising where money goes. |
+
+The honest cost: because each tool re-derives what it needs, a full flow
+measures the same product several times. Against a local snapshot that is
+microseconds, so the trade is right. Against a live API it would need a cache —
+and the question of state between calls would return in earnest.
+
 ## 5. Handling the hard measurement problems
 
 ### The status taxonomy, and the refusal nobody counts
