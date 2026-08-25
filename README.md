@@ -206,7 +206,7 @@ tests/                   56 tests: calibration, censoring, sample gating, policy
 | Part C — tool-contract documentation | `docs/tool-contracts.md` — exact model-facing strings, recorded outputs |
 | Part D — operational requirements | No secrets committed; all configuration via environment variables; local dataset, so **no network access at runtime** and no API fixtures required; the export path throttles and backs off on HTTP 429 |
 | Design rationale | `docs/design-rationale.md` |
-| Defence script | `docs/defence-checklist.md` |
+| Defence script | `docs/defence-checklist.md`; command sheet `docs/demo-runbook.md`; recorded-defence script `docs/video-runbook.md` |
 
 ## Licence
 

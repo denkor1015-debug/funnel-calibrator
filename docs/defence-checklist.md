@@ -2,6 +2,8 @@
 
 Individual defence, 10–15 minutes. Every command below is real and runs from the repository root.
 
+For a **recorded** defence the requirements are stricter — one continuous take, and the changed input, the failure, and the traced value must all be shown unprompted. Script for that: [`video-runbook.md`](video-runbook.md).
+
 ## Before starting
 
 - [ ] `git status` clean; `data/snapshot.json` and `data/economics.json` present
