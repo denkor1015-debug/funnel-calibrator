@@ -33,7 +33,7 @@ five days.
 
 For each product: measure its own funnel, recalibrate its bounds from those
 rates, and audit the watchdog's proposal against the corrected numbers. Write
-the result to `Decisions/2026-08-24.md` with the evidence chain — the sample it
+the result to `Decisions/2026-08-25.md` with the evidence chain — the sample it
 rests on, the assumed bound, the observed bound, and the verdict.
 
 Where the evidence is too thin to judge, say so instead of choosing.

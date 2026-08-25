@@ -33,7 +33,7 @@ uv run python agent/run_agent.py --dry-run
   uv run funnel-calibrator
   ```
 
-  It waits on stdio and prints nothing. Say so: an MCP server over stdio is silent until a client speaks to it. Ctrl-C.
+  It waits on stdio and prints nothing. Say so: an MCP server over stdio is silent until a client speaks to it. Stop it with **Ctrl-D** — closing the pipe is how a host shuts a stdio server down; this server does not act on Ctrl-C.
 
 - [ ] Show the tools with an independent client, no agent involved:
 
