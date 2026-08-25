@@ -1,0 +1,10 @@
+{
+  "_comment": "Interactive demonstration: the calibrator alone, in a normal MCP host. No credentials are involved, because this server needs none — it reads a local snapshot. Use it with `--strict-mcp-config` so the host connects to this and nothing else.",
+  "mcpServers": {
+    "funnel-calibrator": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "funnel-calibrator"]
+    }
+  }
+}
